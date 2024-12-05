@@ -1,0 +1,301 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
+import javax.swing.*;
+
+class MovieTicketBookingSystem extends Frame implements ActionListener {
+    CardLayout card;
+    Panel mainPanel, userPanel, adminPanel;
+    Button btnUser, btnAdmin, btnBackToMain, btnUserExit, btnAdminExit;
+
+    // User Panel Components
+    Choice movieList;
+    TextField userName, userMobile, ticketCount, paymentAmount;
+    Button btnBook, btnViewHistory;
+    Label userMessage;
+    TextArea bookingHistoryArea;
+    ArrayList<String> bookingHistory = new ArrayList<>();
+    ArrayList<String> adminNotifications = new ArrayList<>();
+
+    // Admin Panel Components
+    TextField movieName, ticketPrice, showTime;
+    Button btnUpdate, btnViewBookings, btnViewNotifications;
+    TextArea adminMessage;
+
+    // Movie Data
+    class Movie {
+        String name;
+        double price;
+        String timing;
+
+        Movie(String name, double price, String timing) {
+            this.name = name;
+            this.price = price;
+            this.timing = timing;
+        }
+
+        @Override
+        public String toString() {
+            return name + " - " + timing + " ($" + price + ")";
+        }
+    }
+
+    ArrayList<Movie> movies = new ArrayList<>();
+
+    MovieTicketBookingSystem() {
+        setTitle("Movie Ticket Booking System");
+        setSize(800, 600);
+        setBackground(new Color(245, 245, 245)); // Light background color
+        setLayout(new BorderLayout());
+
+        // Sample Movies
+        movies.add(new Movie("Avatar", 250, "10:00 AM"));
+        movies.add(new Movie("Inception", 300, "1:00 PM"));
+        movies.add(new Movie("Interstellar", 350, "5:00 PM"));
+
+        // Main Panel
+        mainPanel = new Panel();
+        mainPanel.setBackground(new Color(173, 216, 230)); // Light blue
+        mainPanel.setLayout(new FlowLayout());
+        btnUser = new Button("User");
+        btnUser.setBackground(new Color(135, 206, 250)); // Light Sky Blue
+        btnUser.setForeground(Color.BLACK);
+        btnAdmin = new Button("Admin");
+        btnAdmin.setBackground(new Color(255, 182, 193)); // Light Pink
+        btnAdmin.setForeground(Color.BLACK);
+        mainPanel.add(btnUser);
+        mainPanel.add(btnAdmin);
+
+        // User Panel
+        userPanel = new Panel();
+        userPanel.setBackground(new Color(240, 255, 240)); // Light green
+        userPanel.setLayout(new FlowLayout());
+        movieList = new Choice();
+        updateMovieList();
+        userName = new TextField(15);
+        userMobile = new TextField(10);
+        ticketCount = new TextField(5);
+        paymentAmount = new TextField(10);
+        btnBook = new Button("Book Ticket");
+        btnBook.setBackground(new Color(60, 179, 113)); // Medium Sea Green
+        btnBook.setForeground(Color.WHITE);
+        userMessage = new Label("Enter your details and book a movie ticket.");
+        userMessage.setForeground(Color.RED); // Message in red
+        btnUserExit = new Button("Exit");
+        btnUserExit.setBackground(new Color(255, 69, 0)); // Red-Orange
+        btnUserExit.setForeground(Color.WHITE);
+
+        // Booking History Components
+        btnViewHistory = new Button("View Booking History");
+        btnViewHistory.setBackground(new Color(100, 149, 237)); // Cornflower Blue
+        btnViewHistory.setForeground(Color.WHITE);
+        bookingHistoryArea = new TextArea(10, 50);
+        bookingHistoryArea.setEditable(false);
+
+        userPanel.add(new Label("Your Name:"));
+        userPanel.add(userName);
+        userPanel.add(new Label("Mobile Number (10 digits):"));
+        userPanel.add(userMobile);
+        userPanel.add(new Label("Select Movie:"));
+        userPanel.add(movieList);
+        userPanel.add(new Label("No. of Tickets:"));
+        userPanel.add(ticketCount);
+        userPanel.add(new Label("Payment Amount:"));
+        userPanel.add(paymentAmount);
+        userPanel.add(btnBook);
+        userPanel.add(btnViewHistory);
+        userPanel.add(userMessage);
+        userPanel.add(bookingHistoryArea);
+        userPanel.add(btnUserExit);
+
+        // Admin Panel
+        adminPanel = new Panel();
+        adminPanel.setBackground(new Color(255, 228, 196)); // Light peach
+        adminPanel.setLayout(new FlowLayout());
+        movieName = new TextField(15);
+        ticketPrice = new TextField(5);
+        showTime = new TextField(10);
+        btnUpdate = new Button("Update Movie");
+        btnUpdate.setBackground(new Color(0, 128, 128)); // Teal
+        btnUpdate.setForeground(Color.WHITE);
+        btnViewBookings = new Button("View Bookings");
+        btnViewBookings.setBackground(new Color(123, 104, 238)); // Medium Slate Blue
+        btnViewBookings.setForeground(Color.WHITE);
+        btnViewNotifications = new Button("View Notifications");
+        btnViewNotifications.setBackground(new Color(238, 232, 170)); // Pale Goldenrod
+        btnViewNotifications.setForeground(Color.BLACK);
+        adminMessage = new TextArea(10, 50);
+        btnAdminExit = new Button("Exit");
+        btnAdminExit.setBackground(new Color(255, 69, 0)); // Red-Orange
+        btnAdminExit.setForeground(Color.WHITE);
+
+        adminPanel.add(new Label("Movie Name:"));
+        adminPanel.add(movieName);
+        adminPanel.add(new Label("Ticket Price:"));
+        adminPanel.add(ticketPrice);
+        adminPanel.add(new Label("Show Time:"));
+        adminPanel.add(showTime);
+        adminPanel.add(btnUpdate);
+        adminPanel.add(btnViewBookings);
+        adminPanel.add(btnViewNotifications);
+        adminPanel.add(adminMessage);
+        adminPanel.add(btnAdminExit);
+
+        // Back to Main Button
+        btnBackToMain = new Button("Back");
+        btnBackToMain.setBackground(new Color(211, 211, 211)); // Light Gray
+        btnBackToMain.setForeground(Color.BLACK);
+        userPanel.add(btnBackToMain);
+        adminPanel.add(btnBackToMain);
+
+        // CardLayout to switch between panels
+        card = new CardLayout();
+        Panel cardPanel = new Panel();
+        cardPanel.setLayout(card);
+        cardPanel.add(mainPanel, "Main");
+        cardPanel.add(userPanel, "User");
+        cardPanel.add(adminPanel, "Admin");
+        add(cardPanel);
+
+        // Event Listeners
+        btnUser.addActionListener(e -> card.show(cardPanel, "User"));
+        btnAdmin.addActionListener(e -> {
+            if (authenticateAdmin()) {
+                card.show(cardPanel, "Admin");
+            }
+        });
+        btnBackToMain.addActionListener(e -> card.show(cardPanel, "Main"));
+        btnBook.addActionListener(this);
+        btnViewHistory.addActionListener(e -> {
+            if (bookingHistory.isEmpty()) {
+                bookingHistoryArea.setText("No bookings made yet.");
+            } else {
+                StringBuilder history = new StringBuilder();
+                for (String booking : bookingHistory) {
+                    history.append(booking).append("\n");
+                }
+                bookingHistoryArea.setText(history.toString());
+            }
+        });
+        btnUpdate.addActionListener(e -> {
+            String name = movieName.getText().trim();
+            String priceText = ticketPrice.getText().trim();
+            String timing = showTime.getText().trim();
+
+            if (name.isEmpty() || priceText.isEmpty() || timing.isEmpty()) {
+                JOptionPane.showMessageDialog(null, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            try {
+                double price = Double.parseDouble(priceText);
+
+                // Check if the movie already exists
+                boolean movieUpdated = false;
+                for (Movie movie : movies) {
+                    if (movie.name.equalsIgnoreCase(name)) {
+                        movie.price = price;
+                        movie.timing = timing;
+                        movieUpdated = true;
+                        break;
+                    }
+                }
+
+                // If movie does not exist, add it to the list
+                if (!movieUpdated) {
+                    movies.add(new Movie(name, price, timing));
+                }
+
+                // Update the user panel's movie list
+                updateMovieList();
+
+                JOptionPane.showMessageDialog(null, "Movie details updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+                // Clear input fields
+                movieName.setText("");
+                ticketPrice.setText("");
+                showTime.setText("");
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(null, "Invalid price. Please enter a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        btnViewBookings.addActionListener(this);
+        btnViewNotifications.addActionListener(this);
+
+        // Exit Button Listeners
+        btnUserExit.addActionListener(e -> System.exit(0));
+        btnAdminExit.addActionListener(e -> System.exit(0));
+
+        // Close Action
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                dispose();
+            }
+        });
+
+        setVisible(true);
+    }
+
+    private boolean authenticateAdmin() {
+        JTextField idField = new JTextField();
+        JPasswordField passwordField = new JPasswordField();
+        Object[] message = {
+            "Admin ID:", idField,
+            "Password:", passwordField
+        };
+        int option = JOptionPane.showConfirmDialog(
+            null, message, "Admin Login", JOptionPane.OK_CANCEL_OPTION);
+        if (option == JOptionPane.OK_OPTION) {
+            String id = idField.getText();
+            String password = new String(passwordField.getPassword());
+            return id.equals("admin@gmail.com") && password.equals("admin@123");
+        }
+        return false;
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == btnBook) {
+            try {
+                String name = userName.getText().trim();
+                String mobile = userMobile.getText().trim();
+                if (!mobile.matches("\\d{10}")) {
+                    userMessage.setText("Invalid mobile number. Enter 10 digits.");
+                    return;
+                }
+                int tickets = Integer.parseInt(ticketCount.getText());
+                double payment = Double.parseDouble(paymentAmount.getText());
+                int selectedIndex = movieList.getSelectedIndex();
+                Movie selectedMovie = movies.get(selectedIndex);
+                double requiredPayment = tickets * selectedMovie.price;
+
+                if (name.isEmpty()) {
+                    userMessage.setText("Please enter your name.");
+                } else if (payment >= requiredPayment) {
+                    String bookingDetails = "Name: " + name + ", Mobile: " + mobile +
+                                            ", Movie: " + selectedMovie.name +
+                                            ", Tickets: " + tickets + ", Paid: " + payment;
+                    bookingHistory.add(bookingDetails);
+                    adminNotifications.add("New Booking: " + bookingDetails);
+                    userMessage.setText("Booking successful! Change: " + (payment - requiredPayment));
+                } else {
+                    userMessage.setText("Insufficient payment. Required: " + requiredPayment);
+                }
+            } catch (NumberFormatException ex) {
+                userMessage.setText("Invalid input. Please enter valid numbers.");
+            }
+        }
+    }
+
+    private void updateMovieList() {
+        movieList.removeAll();
+        for (Movie movie : movies) {
+            movieList.add(movie.toString());
+        }
+    }
+
+    public static void main(String[] args) {
+        new MovieTicketBookingSystem();
+    }
+}
